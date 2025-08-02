@@ -1,0 +1,182 @@
+require './input_functions'
+require './allclass.rb'
+
+def read_in_albums() #Nhap du lieu albums tu file text vao
+   file_name = read_string("Please enter file name")
+   read_albums(file_name)
+end
+
+def read_albums(file_name)
+    music_file = File.new(file_name)
+    count = music_file.gets().to_i()
+    albums = Array.new() 
+    i = 0
+    while i < count
+         album = read_album(music_file)
+         albums << album
+         i +=1
+    end
+  read_string("#{albums.length} albums are available")
+  return albums
+end
+
+def read_tracks(music_file,track_count)
+  tracks = Array.new()
+  i = 0
+  while i < track_count
+         track = read_track(music_file)
+         tracks << track
+         i +=1
+  end
+  return tracks
+end
+
+def print_track(track)
+  puts (track.name) 
+end
+def print_tracks(track)
+   x = 0 
+	while x < track.length
+		print_track(track[x])
+		x +=1
+  end
+end 
+  
+def read_album(music_file)
+  title = music_file.gets
+	artist = music_file.gets
+	genre =music_file.gets.chomp.to_i
+  track_count = music_file.gets.to_i
+  if track_count <= 15
+	    tracks = read_tracks(music_file,track_count)
+	    album = Album.new(title, artist, genre, tracks )
+      return album 
+
+  end
+end
+def print_album(album,id)
+  puts ("ID: "+id.to_s())
+  puts (album.title.to_s)
+	puts (album.artist.to_s)
+	puts('Genre: ' + $genre_names[album.genre])
+end
+
+def print_albums(albums)
+  x = 0 
+	while x < albums.length
+		print_album(albums[x],x+1)
+		x +=1
+  end
+end 
+
+def read_track(music_file) # Doc 1 track cua album tu music_file
+    track_name = music_file.gets()
+    track_location = music_file.gets()
+    track = Track.new(track_name, track_location)
+    return track
+end
+
+def display_by_genre(albums)
+  puts("1. Pop")
+  puts("2. Classic")
+  puts("3. Jazz")
+  puts("4. Rock")
+  number = read_integer_in_range("Select a Genre from 1 to 4:",1,4)
+  x = 0 
+	while x < albums.length
+    if albums[x].genre.to_i == number
+		  print_album(albums[x],x+1)
+    end
+    x +=1
+  end
+end
+
+def play_id(albums)
+  option = read_integer_in_range("Album ID: ",1,albums.length)
+  album = albums[option - 1]
+  print_tracks(album.tracks)
+  trackcount = album.tracks.length()
+  track_want_to_play = read_integer_in_range("What track do you want to play",1,trackcount)
+    puts("Playing: ")
+    puts(album.tracks[track_want_to_play-1].name)
+    puts("Album: " + album.title)
+    puts("By " + album.artist)
+end
+
+def to_play_search(albums,search)
+  i = 0
+  album_count = albums.length
+  while i < album_count
+    album = albums[i]
+    tracks_count = album.tracks.length()
+    x = 0
+    while x < tracks_count
+      if album.tracks[x].name.chomp == search.chomp
+        found_index = x 
+      else
+        x+=1
+      end
+      i+=1
+      return found_index
+      end
+    end
+end
+
+
+def select_an_album(albums)
+  puts("1. Play by ID")
+  puts("2. Search") 
+  option = read_integer_in_range("Option number",1,2)
+  case option
+  when 1 
+    print_albums(albums)
+    play_id(albums)
+  when 2 
+    search_string = read_string("Search: ")
+    index = to_play_search(albums, search_string)
+  	if index > -1
+   		puts "Found " + albums.tracks[x].name.chomp.to_s()
+  	else
+    	puts "Entry not Found"
+  	end
+  end
+end
+  
+
+def display_albums(albums)
+  puts("1. Display all")
+  puts("2. Display by genre")
+  option = read_integer_in_range("Option: ",1,2)
+  case option
+  when 1
+    print_albums(albums)
+  when 2
+    display_by_genre(albums)
+  end
+end
+
+def main()
+  finished = false
+  begin
+    puts('Main Menu:')
+    puts('1 Read in albums')
+    puts('2 Display Album')
+    puts('3 Select an album to play')
+    puts('4 Update an existing Album')
+    puts('5 Exit ')
+    choice = read_integer_in_range("Please enter your choice:", 1,  5)
+    case choice
+    when 1
+        albums = read_in_albums()
+	  when 2
+        display_albums(albums)
+    when 3
+        select_an_album(albums)
+    when 4
+        update an album()
+    when 5
+        finished = true
+    end
+  end until finished==true
+end
+main()

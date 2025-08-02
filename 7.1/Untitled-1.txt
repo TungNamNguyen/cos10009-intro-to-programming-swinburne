@@ -1,0 +1,287 @@
+  1|//--------------------------------------------Stage1----------------------------------------------
+  2|// codebreaker
+  3|      MOV R2, #codebreaker // move "codebreaker" string address into R2
+  4|      STR R2, .WriteString // print it 
+  5|      MOV R2, #string1  // move address of string1 (which will be used to store the name of codebreaker) into R2
+  6|      STR R2, .ReadString // get the input
+  7|      STR R2, .WriteString // print it
+  8|// codemaker
+  9|      MOV R2, #codemaker // move "codemaker" string address 
+ 10|      STR R2, .WriteString // print it 
+ 11|      MOV R2, #string2  // move address of string2 (which will be used to store the name of codemaker) into R2
+ 12|      STR R2, .ReadString // get the input
+ 13|      STR R2, .WriteString // print it
+ 14|// maximum number of guesess ( 0 < number of guesses < 13)
+ 15|maximum:
+ 16|      MOV R12, #numberofguesses // move "numberofguesses" string address into R2
+ 17|      STR R12, .WriteString // print
+ 18|      LDR R12, .InputNum // get the input
+ 19|      STR R12, .WriteUnsignedNum // print
+ 20|      CMP R12, #13      //if R12 >= 13 -> print select again message and get another maximum number
+ 21|      BLT comparewith0
+ 22|      BL selectagainmess // print select again message
+ 23|      B maximum         // get the maximum guesses again
+ 24|comparewith0: 
+ 25|      CMP R12, #0       //if R12 <= 0 -> print select again message and get another maximum number 
+ 26|      BGT nextstep      // if R12 > 0 -> jump to next step
+ 27|      BL selectagainmess // print select again message
+ 28|      B maximum         //  get the maximum guesses again
+ 29|//------------------------------------------Stage2,3----------------------------------------------
+ 30|nextstep:
+ 31|; ------------------ read secret code
+ 32|      MOV R2, #secretcode // move secretcode address into R2
+ 33|      MOV R3, #0
+ 34|      STR R3, [R2]      // because we may get many codes (if we get wrong input) so after each time we get it, reset the memory address
+ 35|      MOV R3, #nextline // print next line
+ 36|      BL print
+ 37|      MOV R3, #string2  // move codemaker name into R2
+ 38|      BL print
+ 39|      MOV R3, #entersecretcode // get the message
+ 40|      BL print 
+ 41|      MOV R3, #entercode // get the message
+ 42|      BL print
+ 43|      BL getcode        // go to "getcode" function
+ 44|      BL getcode_next   // go to "getcode_next" function
+ 45|cont_1:
+ 46|; ------------------ read codebreaker's code
+ 47|      MOV R3, #nextline
+ 48|      BL print
+ 49|      MOV R3, #string1  // print codebreaker name
+ 50|      BL print
+ 51|      MOV R3, #guessmessage // print guessmessage
+ 52|      BL print
+ 53|      MOV R3, R12 
+ 54|      STR R3, .WriteUnsignedNum // print number of guesses remaining
+ 55|get_codebreakercode:
+ 56|      MOV R3, #entercode // print entercode message
+ 57|      BL print
+ 58|      BL getcode        // go to "getcode" function
+ 59|      BL getcode_next   // go to "getcode_next" function
+ 60|cont_2:
+ 61|      PUSH {R2, R3, R4, R5, R6, R7, R8} // save registers
+ 62|      MOV R0, #0
+ 63|      MOV R1, #0
+ 64|      MOV R4, #0 
+ 65|      MOV R5, #0
+ 66|      MOV R6, #0
+ 67|      MOV R7, #0        // reset it
+ 68|      MOV R8, #0 
+ 69|      BL comparewithsecret // go to "comparewithsecret" function
+ 70|      POP {R2, R3, R4, R5, R6, R7, R8} // return it to previous value
+ 71|      CMP R0, #4        // if position match = 4 -> print codebreaker win
+ 72|      BEQ print_codebreakerwin 
+ 73|      SUB R12, R12, #1  // subtract the number of guesses with 1	
+ 74|      CMP R12, #0       // compare number of guesses remaining with 0
+ 75|      BNE cont_1        // if not equal then take another query code
+ 76|      CMP R12, #0       // if equal then print codebreakerlose
+ 77|      BEQ print_codebreakerlose
+ 78|finish:                 ;-----------------------finish program
+ 79|      HALT
+ 80|; --------------------------------- HALT -----------------------------------
+ 81|; ------------- Get code
+ 82|getcode:
+ 83|      MOV R2, #string3  // move string3 address ( will be used to store codes) into R2 
+ 84|      STR R2, .ReadString // get the input
+ 85|      RET 
+ 86|getcode_next:
+ 87|      PUSH {R2, R3, SP} // save R2, R3 ,SP into stack
+ 88|      MOV R2, #string3  // get string3 address
+ 89|      MOV R4, #0        // create the index to check if the code has 4 chars
+ 90|      BL only4chars
+ 91|      POP {R2, R3, SP}  // return R2, R3, SP to previous value
+ 92|      PUSH {R2, R3, SP} // save register because we are going to jump to "compare" function after store the code into array
+ 93|      MOV R6, #0 
+ 94|      MOV R4, #0
+ 95|      MOV R7, #secretcode // check what step it is doing
+ 96|      LDRB R7, [R7]
+ 97|      CMP R7, #0
+ 98|      BEQ cont_secret 
+ 99|      CMP R7, #0
+100|      BNE cont_codebreaker
+101|cont_secret:
+102|      LDR R2, [R2]
+103|      MOV R3, #secretcode // take the memory address of array
+104|      STR R2, [R3]      // put secret code into array
+105|      B final_step      // jump to final_step
+106|cont_codebreaker:
+107|      LDR R2, [R2]
+108|      MOV R3, #querycode // take the memory address of query array
+109|      STR R2, [R3]      // put codebreaker's code into array
+110|      BL print
+111|      B final_step      // jump to final_step
+112|final_step: 
+113|      BL compare        // after store the code into array then jump to "compare" function
+114|; ---------------------------
+115|; ------- Check if the code has more or less than 4 characters
+116|only4chars:             // check if the code has less than 4 characters -> get code
+117|      LDRB R3, [R2 + R4] // take single byte of the code ( from least significant to most significant byte)
+118|      CMP R3, #0        // compare it with 0 ( if it is equal to 0, which means that byte is empty, and the code is missing -> getcode again)
+119|      BNE cont_4chars   // if not equal, go to cont_4chars to do the same thing for the next byte
+120|      MOV R7, #secretcode // move "secretcode" array address into R7 ( in this program, we have to take 2 codes from code breaker and code maker, so we have to create a condition for it to jump back to correct place)
+121|      LDRB R7, [R7]     // load the least significant byte of secretcode array 
+122|      CMP R7, #0        // if it is equal to 0, which means the secretcode isn't stored into array (secret code will be stored into array if it meets the requirement of having only 4 characters 
+123|      BEQ nextstep      // -> jump back to get the secret code
+124|      CMP R7, #0
+125|      BNE get_codebreakercode // if it isn't equal to 0, the secret code obtained (this means we are getting codebreakercode), so jump back to get codebreakercode
+126|cont_4chars:
+127|      ADD R4, R4, #1    // increase index to take the next byte
+128|      CMP R4, #4        // compare with 4 (after take the most significant byte, we have to stop the "only4chars" loop)
+129|      BLT only4chars    // if less than -> do the "only4chars" loop again
+130|      LDRB R3, [R2 + R4] // take the least significant byte of the address next to the code address ( because R4 now = 4)
+131|      CMP R3, #0 
+132|      BEQ cont_4chars_2 // if it is equal to 0 -> it doesn't have fifth character -> all conditions are fulfilled -> continue
+133|      MOV R7, #secretcode // if not, check what step it is doing
+134|      LDRB R7, [R7] 
+135|      CMP R7, #0
+136|      BEQ nextstep      // if it is getting secret code, then get secret code again
+137|      CMP R7, #0
+138|      BNE get_codebreakercode // if it is getting codebreaker code, then get codebreaker code again
+139|cont_4chars_2:
+140|      RET
+141|; ---------------------------
+142|;---------- r = 114, g = 103, b = 98, y = 121, p = 112, c = 99  
+143|; ------- Check single character of code with each character is required
+144|compare:                // check if the code contain r, g, b, y, p , c
+145|      MOV R6, R4        // take the index in case I need to check for duplicates
+146|      LDRB R5, [R3 + R4] // take the least to most significant byte of the code
+147|      CMP R5, #114      // compare with r
+148|      BEQ compare2      // if it is equal, then check if it overlaps with the rest of the characters
+149|      CMP R5, #103      // compare with g
+150|      BEQ compare2
+151|      CMP R5, #98       // compare with b
+152|      BEQ compare2
+153|      CMP R5, #121      // compare with y
+154|      BEQ compare2
+155|      CMP R5, #112      // compare with p
+156|      BEQ compare2
+157|      CMP R5, #99       // compare with c
+158|      BEQ compare2 
+159|      MOV R7, #querycode // if it is not equal to any required chars -> check what step it is doing
+160|      LDRB R7, [R7]     // in this step the secret code has already stored into secretcode array, so we have to use querycode array
+161|      CMP R7, #0
+162|      BEQ nextstep      // if it is getting secret code, then get secret code again
+163|      CMP R7, #0
+164|      BNE get_codebreakercode // if it is getting codebreaker code, then get codebreaker code again
+165|; ---------------------------
+166|; ------- Check if any letter is duplicated
+167|compare2:               // each letter is entered only one time
+168|      ADD R6, R6, #1    // increase the index to compare with the next byte
+169|      LDRB R2, [R3 + R6] // take the next byte to compare
+170|      CMP R2, R5        // compare current byte with next byte
+171|      BNE continue_compare2 // if not equal, then continute to do the "compare2" loop
+172|      MOV R7, #querycode // if it is equal, get code again 
+173|      LDRB R7, [R7]     // check what step it is doing, then go back to that step
+174|      CMP R7, #0
+175|      BEQ nextstep 
+176|      CMP R7, #0
+177|      BNE get_codebreakercode 
+178|continue_compare2:
+179|      CMP R6, #4 
+180|      BLT compare2      // if less than, do the "compare2" loop
+181|      ADD R4, R4, #1    // increase index for "compare" loop
+182|      CMP R4, #4 
+183|      BLT compare       // do the loop until it gets all the bytes
+184|      MOV R7, #querycode // check what step it is doing
+185|      LDRB R7, [R7]
+186|      CMP R7, #0
+187|      BEQ cont_1        // will jump to get codebreaker's code when there is nothing in querycode array
+188|      CMP R7, #0
+189|      BNE cont_2        // when codebreaker's code is got and comparison finished, jump to next step
+190|; ---------------------------
+191|; ---------------------------Compare query code with secret code
+192|comparewithsecret:      //---check the position match
+193|      MOV R7, #0
+194|      MOV R2, #querycode //  get the query array address
+195|      LDRB R2, [R2 + R4] // load the least significant byte of the query code into R2
+196|      MOV R6, #secretcode // get the secret array address
+197|      LDRB R3, [R6 + R5] // load the least significant byte of the secret code into R3
+198|      CMP R3, R2        // check position match
+199|      BNE comparewithsinglebyte // if it isn't equal, then check colour match
+200|      ADD R0, R0, #1    // increase total match position
+201|      B conditionforloop // then go to increase condition for loop
+202|comparewithsinglebyte:  //---check the colour match
+203|      LDRB R3, [R6 + R7] // compare with all the bytes of secret code
+204|      CMP R7, R4        // check if both bytes are in the same position
+205|      BEQ conditionforloop // if it is in the same position then increase the index and compare with the next byte of secret code
+206|      CMP R2, R3        // compare the byte in query code with byte in secret code
+207|      BNE conditionforloop // go to "conditionforloop" if it is not equal
+208|      ADD R1, R1, #1    // if it is equal then increase totalmatch colour
+209|conditionforloop: 
+210|      ADD R7, R7, #1    // increase the index for taking the next byte of secret code
+211|      CMP R7, #4        // check if we have already compared all the bytes of secret code
+212|      BLT comparewithsinglebyte // if less than -> redo the "comparewithsinglebyte" loop
+213|      ADD R4, R4, #1    // after checking colour match -> increase the index to take next querycode byte
+214|      ADD R5, R5, #1    // increase the index to take next secretcode byte
+215|      CMP R4, #4        // check if we have compared all the byte of querycode
+216|      BLT comparewithsecret // if less than -> redo the "comparewithsecret" loop
+217|      MOV R11, #positionmatch 
+218|      STR R11, .WriteString
+219|      STR R0, .WriteUnsignedNum // print total position match
+220|      MOV R11, #colourmatch
+221|      STR R11, .WriteString
+222|      STR R1, .WriteUnsignedNum // print total colour match
+223|      RET
+224|; ---------------------------
+225|; ------- Select Again Message
+226|selectagainmess:
+227|      PUSH {R2}
+228|      MOV R2, #selectagain 
+229|      STR R2, .WriteString // print select again message
+230|      POP {R2}
+231|      RET
+232|; ---------------------------
+233|; ------- Move to next line
+234|movetonextline:
+235|      PUSH {R2}
+236|      MOV R2, #nextline
+237|      STR R2,.WriteString // print an empty line(move to next line)
+238|      POP {R2}
+239|      RET
+240|; ---------------------------
+241|; ------- print
+242|print:
+243|      PUSH {R2}
+244|      MOV R2, R3
+245|      STR R2,.WriteString // print value in R3
+246|      POP {R2}
+247|      RET
+248|; -------------------------
+249|; -------------------------
+250|print_codebreakerwin:   ; -------------------------Winner message
+251|      MOV R3, #nextline
+252|      BL print
+253|      MOV R3, #string1
+254|      BL print
+255|      MOV R3, #youwin
+256|      BL print
+257|      MOV R3, #gameover
+258|      BL print
+259|      B finish          ;--------------------------jump to finish program
+260|print_codebreakerlose:  ; -------------------------Loser message
+261|      MOV R3, #nextline
+262|      BL print
+263|      MOV R3, #string1
+264|      BL print
+265|      MOV R3, #youlose
+266|      BL print
+267|      MOV R3, #gameover
+268|      BL print
+269|      B finish          ;--------------------------jump to finish program
+270|string1: .BLOCK 16      // Codebreaker name
+271|string2: .BLOCK 16      // Codemaker name
+272|string3: .BLOCK 16      // Code
+273|codebreaker: .ASCIZ "Codebreaker is "
+274|codemaker: .ASCIZ "\nCodemaker is "
+275|selectagain: .ASCIZ "\nPlease choose a number from 1 to 12"
+276|numberofguesses: .ASCIZ "\nMaximum number of guesses: "
+277|nextline: .ASCIZ " \n"
+278|entercode: .ASCIZ "\nEnter a code: "
+279|entersecretcode: .ASCIZ ", please enter a 4-character secret code."
+280|guessmessage: .ASCIZ ",this is guess number: "
+281|positionmatch: .ASCIZ "\nPosition matches: "
+282|colourmatch: .ASCIZ ",Colour matches: "
+283|youwin: .ASCIZ ", you WIN!"
+284|youlose: .ASCIZ ", you LOSE!"
+285|gameover: .ASCIZ "\nGame Over!"
+286|secretcode: .WORD 0
+287|querycode: .WORD 0

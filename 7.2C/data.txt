@@ -1,0 +1,15 @@
+1
+30
+Adele
+image/adele.jpg
+1
+4
+Easy On Me
+music\easyonme.mp3
+My Little Love 
+music\mylittlelove.mp3
+Oh My God 
+music\ohmygod.mp3
+Strange By Nature
+music\strangerbynature.mp3
+
